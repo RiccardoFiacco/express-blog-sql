@@ -18,52 +18,45 @@ function index(req, res, next){
     // if(id && !isNaN(id) && id>=0){ //se id è un numero e maggiore o uguale a 0
     //     postList = posts.slice(0, id)
     // }
-
-
-    /**
-     * [
-     *  { id: 1, tag: "torta" },
-     *  { id: 1, tag: "dolci" },
-     *  { id: 1, tag: "cioccolato" },
-     *  { id: 2, tag: "dolci" },
-     *  { id: 2, tag: "frutta" },
-     * ]
-     */
-
-    
+ 
     let postList;
-    const sqlQuery = 'SELECT * FROM posts'
+    const sqlQuery = `SELECT *
+        FROM posts AS P
+        JOIN post_tag AS PT
+        ON P.id = PT.post_id
+        JOIN tags AS T
+        on PT.tag_id = T.id`
+
     connection.query(sqlQuery, (err, results) => {
         if (err) return res.status(500).json({ error: 'Database query failed' }); 
         postList = results;
+        let finalArr = [];
+        postList.forEach( row=>{
+            let ogg = {
+                id: row['id'],
+                title: row['title'],
+                content: row['content'],
+                image: row['image'],
+                post_id: row['post_id'],
+                tag_id: row['tag_id'],
+                label: row['label']
+            }
+            console.log(ogg)
+            // if(finalArr.includes(ogg.id)){
+            //     ogg = {
+            //         ...ogg,
+            //         label : [...label, row['label']] 
+            //     }
+            // }
 
-        const postWithTags = [];
+            // finalArr.push(ogg)
 
-        postList.forEach(e => {
-            const sqlSubQuery = ` 
-            SELECT T.label
-            FROM posts AS P
-            JOIN post_tag AS PT
-            ON P.id = PT.post_id
-            JOIN tags AS T
-            on PT.tag_id = T.id
-            WHERE P.id=?`
-            connection.query(sqlSubQuery,[e.id], (err, resTags) => {
-                if (err) return res.status(500).json({ error: 'Database query failed' }); 
-
-                let tags=[];
-                resTags.map((tag)=>{
-                    tags.push(tag['label'])
-                })
-                
-                e = {...e, tags}
-                console.log(e)
-                postWithTags.push(e)
-                
-            }); 
         })
+
         
-        res.json(postWithTags)
+        console.log(finalArr)
+        
+        res.json(postList)
         
     })
     

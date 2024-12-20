@@ -4,7 +4,7 @@ const postController = require("../controller/postController.js")
 const {existsId, checkInput, checkInputUpdate, checkVoid} = require("../middlewere/utils.js")
 
 //index
-router.get('/', postController.index, () => {
+router.get('/', postController.index,  () => {
     console.log('Fine index');
 });
 
