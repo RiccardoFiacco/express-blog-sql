@@ -5,22 +5,69 @@ let lastIndex= posts.at(-1).id;
 
 function index(req, res, next){
     console.log("ritorno dei post");
-    let postList = posts;
-    let id =parseInt(req.query.limit);
+    let id = parseInt(req.query.limit);
 
     //filtro con le query string
-    if(req.query.tags){ //se esiste il tag
-        postList = posts.filter((element)=>{ //per ogni elemento
-            return element.tags.includes(req.query.tags); //ritorniamo solo quelli che hanno il valore inserito
+    // if(req.query.tags){ //se esiste il tag
+    //     postList = posts.filter((element)=>{ //per ogni elemento
+    //         return element.tags.includes(req.query.tags); //ritorniamo solo quelli che hanno il valore inserito
+    //     })
+    // }
+
+    // //limite di post
+    // if(id && !isNaN(id) && id>=0){ //se id è un numero e maggiore o uguale a 0
+    //     postList = posts.slice(0, id)
+    // }
+
+
+    /**
+     * [
+     *  { id: 1, tag: "torta" },
+     *  { id: 1, tag: "dolci" },
+     *  { id: 1, tag: "cioccolato" },
+     *  { id: 2, tag: "dolci" },
+     *  { id: 2, tag: "frutta" },
+     * ]
+     */
+
+    
+    let postList;
+    const sqlQuery = 'SELECT * FROM posts'
+    connection.query(sqlQuery, (err, results) => {
+        if (err) return res.status(500).json({ error: 'Database query failed' }); 
+        postList = results;
+
+        const postWithTags = [];
+
+        postList.forEach(e => {
+            const sqlSubQuery = ` 
+            SELECT T.label
+            FROM posts AS P
+            JOIN post_tag AS PT
+            ON P.id = PT.post_id
+            JOIN tags AS T
+            on PT.tag_id = T.id
+            WHERE P.id=?`
+            connection.query(sqlSubQuery,[e.id], (err, resTags) => {
+                if (err) return res.status(500).json({ error: 'Database query failed' }); 
+
+                let tags=[];
+                resTags.map((tag)=>{
+                    tags.push(tag['label'])
+                })
+                
+                e = {...e, tags}
+                console.log(e)
+                postWithTags.push(e)
+                
+            }); 
         })
-    }
-
-    //limite di post
-    if(id && !isNaN(id) && id>=0){ //se id è un numero e maggiore o uguale a 0
-        postList = posts.slice(0, id)
-    }
-
-    res.json(postList)
+        
+        res.json(postWithTags)
+        
+    })
+    
+    
     next()
 }
 
